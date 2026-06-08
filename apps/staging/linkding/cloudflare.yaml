@@ -67,7 +67,7 @@ data:
   config.yaml: |
     # Name of the tunnel you want to run
     
-    tunnel: linkding 
+    tunnel: linkding
 
     credentials-file: /etc/cloudflared/creds/credentials.json
 
@@ -76,7 +76,7 @@ data:
     no-autoupdate: true
 
     ingress:
-    - hostname: linkding.mischavandenburg.net
+    - hostname: linkding.nuneslopes.org
       service: http://linkding:9090
 
     # This rule sends traffic to the built-in hello-world HTTP server. This can help debug connectivity
