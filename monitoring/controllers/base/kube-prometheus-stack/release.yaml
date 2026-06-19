@@ -28,3 +28,12 @@ spec:
   values:
     grafana:
       adminPassword: ***ROTATED-CREDENTIAL-SEE-POSTMORTEM***
+      ingress:
+        enabled: true
+
+        ingressClassName: traefik
+
+        hosts:
+          - grafana.nuneslopes.org
+
+        tls: []
