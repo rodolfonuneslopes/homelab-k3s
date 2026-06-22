@@ -36,4 +36,7 @@ spec:
         hosts:
           - grafana.nuneslopes.org
 
-        tls: []
+        tls:
+          - secretName: grafana-tls-secret
+            hosts:
+              - grafana.nuneslopes.org
