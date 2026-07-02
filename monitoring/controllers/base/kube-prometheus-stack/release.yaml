@@ -27,7 +27,6 @@ spec:
           kind: PrometheusRule
   values:
     grafana:
-      adminPassword: ***ROTATED-CREDENTIAL-SEE-POSTMORTEM***
       ingress:
         enabled: true
 
@@ -40,3 +39,8 @@ spec:
           - secretName: grafana-tls-secret
             hosts:
               - grafana.nuneslopes.org
+  valuesFrom:
+    - kind: Secret
+      name: grafana-admin-credentials
+      valuesKey: admin-password
+      targetPath: grafana.adminPassword
