@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fogos
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fogos
+
+  template:
+    metadata:
+      labels:
+        app: fogos
+
+    spec:
+      securityContext:
+        # distroless/static-debian12:nonroot's built-in user
+        fsGroup: 65532
+        runAsUser: 65532
+        runAsGroup: 65532
+
+      containers:
+        - name: fogos
+          image: ghcr.io/rodolfonuneslopes/fogos:0.1.3
+
+          ports:
+            - containerPort: 8888
+              protocol: TCP
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            # Safe here: the binary embeds its static assets and keeps its
+            # incident cache in memory, so it never writes to disk.
+            readOnlyRootFilesystem: true
+
+          readinessProbe:
+            httpGet:
+              # No dedicated health endpoint; this route is static,
+              # in-memory, and has no upstream dependency.
+              path: /api/concelhos
+              port: 8888
+            initialDelaySeconds: 2
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /api/concelhos
+              port: 8888
+            initialDelaySeconds: 5
+            periodSeconds: 30
+
+      restartPolicy: Always
