@@ -22,7 +22,7 @@ spec:
 
       containers:
         - name: fogos
-          image: ghcr.io/rodolfonuneslopes/fogos:0.1.5
+          image: ghcr.io/rodolfonuneslopes/fogos:0.1.6
 
           ports:
             - containerPort: 8888
