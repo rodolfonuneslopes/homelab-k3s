@@ -1,2 +1,2 @@
 # homelab-k3s
-The kubernetes cluster (in k3s) of my homelab
+The code of my self-hosted kubernetes cluster. Check out the full documented story in my [blog](https://blog.nuneslopes.org). 
