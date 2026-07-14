@@ -1,0 +1,57 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  KUBECONFORM_VERSION: v0.8.0
+  # Flux CRD schemas (Kustomization, HelmRelease, HelmRepository) come from
+  # the community CRDs-catalog; core kinds from kubeconform's default location.
+  SCHEMA_CRDS: https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install kubeconform
+        run: |
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | sudo tar xz -C /usr/local/bin kubeconform
+
+      - name: Render all Flux overlays
+        run: |
+          mkdir -p rendered
+          for d in apps/staging \
+                   infrastructure/controllers/staging \
+                   monitoring/controllers/staging \
+                   monitoring/configs/staging; do
+            kubectl kustomize "$d" > "rendered/$(echo "$d" | tr / -).yaml"
+          done
+
+      - name: Validate rendered manifests
+        # Secrets are skipped: SOPS adds a top-level `sops` field and ENC[...]
+        # values, which legitimately fail the Secret schema.
+        run: |
+          kubeconform -summary \
+            -schema-location default \
+            -schema-location "$SCHEMA_CRDS" \
+            -skip Secret \
+            rendered/*.yaml
+
+      - name: Validate cluster entry points
+        # gotk-components.yaml is Flux-generated ("DO NOT EDIT") and not
+        # validated here on purpose.
+        run: |
+          kubeconform -summary \
+            -schema-location default \
+            -schema-location "$SCHEMA_CRDS" \
+            clusters/staging/apps.yaml \
+            clusters/staging/infrastructure.yaml \
+            clusters/staging/monitoring.yaml
