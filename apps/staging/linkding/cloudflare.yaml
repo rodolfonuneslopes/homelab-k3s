@@ -15,6 +15,12 @@ spec:
       containers:
       - name: cloudflared
         image: cloudflare/cloudflared:2026.7.1
+        resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
         args:
         - tunnel
         - --config

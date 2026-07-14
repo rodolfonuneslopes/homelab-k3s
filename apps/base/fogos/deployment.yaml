@@ -23,6 +23,12 @@ spec:
       containers:
         - name: fogos
           image: ghcr.io/rodolfonuneslopes/fogos:0.1.6
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi
 
           ports:
             - containerPort: 8888
