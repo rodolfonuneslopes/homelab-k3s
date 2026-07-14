@@ -1,5 +1,7 @@
 # homelab-k3s
 
+[![validate](https://github.com/rodolfonuneslopes/homelab-k3s/actions/workflows/validate.yaml/badge.svg)](https://github.com/rodolfonuneslopes/homelab-k3s/actions/workflows/validate.yaml)
+
 GitOps-managed Kubernetes homelab: a [k3s](https://k3s.io) cluster fully
 reconciled by [Flux CD](https://fluxcd.io) from this repository. Nothing is
 ever `kubectl apply`'d by hand — a merged pull request **is** the deployment,
@@ -10,6 +12,10 @@ and a deleted file **is** the teardown.
 - **Git is the single source of truth.** Every Flux Kustomization runs with
   `prune: true`: the cluster converges to exactly what's in `main`, including
   removals. Cluster state and its full history are one `git log` away.
+- **Broken manifests can't reach the cluster.** CI renders every overlay and
+  schema-validates the output on each PR, and a branch ruleset makes the
+  green check a merge requirement — `main` accepts no direct pushes, not
+  even from me.
 - **Secrets live in git too — encrypted.** SOPS + [age](https://age-encryption.org)
   encrypt secret values in place; Flux decrypts them in-cluster. Exactly one
   secret exists outside git: the age private key.
@@ -19,9 +25,10 @@ and a deleted file **is** the teardown.
 - **Least privilege by default.** All workloads run as non-root with explicit
   UIDs; my own app runs from a distroless image with a read-only root
   filesystem.
-- **Updates are automated, but gated.** A self-hosted Renovate opens PRs for
-  dependency updates; a human merges; Flux deploys. Even bots go through the
-  GitOps front door.
+- **Updates are automated, but gated.** Every image is version-pinned; a
+  self-hosted Renovate opens PRs to bump images and Helm charts; CI
+  validates; a human merges; Flux deploys. Even bots go through the GitOps
+  front door.
 
 ## Stack
 
@@ -31,8 +38,10 @@ and a deleted file **is** the teardown.
 | GitOps engine | Flux CD (kustomize- + helm-controller) |
 | Manifest composition | Kustomize (base / overlay) |
 | Secrets | SOPS + age, decrypted in-cluster by Flux |
+| CI | GitHub Actions — kustomize render + kubeconform on every PR |
+| Merge gate | GitHub ruleset on `main`: PR + green `validate` check required |
 | Monitoring | kube-prometheus-stack (Prometheus, Grafana, Alertmanager) via HelmRelease |
-| Dependency updates | Renovate (self-hosted CronJob) |
+| Dependency updates | Renovate (self-hosted CronJob; `kubernetes` + `flux` managers) |
 | Public ingress | Cloudflare Tunnels (per-app) |
 | Internal ingress | Traefik (k3s built-in) |
 
@@ -41,7 +50,8 @@ and a deleted file **is** the teardown.
 ```mermaid
 flowchart LR
     subgraph dev [Change flow]
-        PR[Pull request] --> main[(main branch)]
+        PR[Pull request] --> CI[CI: render + schema-validate]
+        CI -- green check required --> main[(main branch)]
     end
     subgraph cluster [k3s cluster]
         SC[Flux source-controller] --> KC[Flux kustomize-controller]
@@ -74,6 +84,8 @@ infrastructure/controllers/  # Cluster tooling (Renovate)
 monitoring/
 ├── controllers/           # HelmRepository + HelmRelease
 └── configs/               # Configuration consumed by the release (secrets)
+
+.github/workflows/         # CI: render all overlays, validate schemas
 ```
 
 The **base/overlay** split keeps app manifests environment-agnostic; adding a
@@ -83,13 +95,42 @@ reconcile independently.
 
 ## How a change reaches the cluster
 
-1. A PR merges to `main`.
-2. Flux's **source-controller** pulls the new commit (1-minute interval).
+1. A PR opens. CI renders every Flux overlay (the same kustomize build the
+   controller runs in-cluster) and validates the output against Kubernetes
+   and Flux CRD schemas with kubeconform. The `main` ruleset blocks merging —
+   and direct pushes — until the check is green.
+2. The PR merges. Flux's **source-controller** pulls the new commit
+   (1-minute interval).
 3. The **kustomize-controller** rebuilds each layer: decrypts SOPS secrets
    with the in-cluster age key, renders the overlay, and server-side-applies
    the result. Pruning removes anything deleted from git.
 4. For monitoring, the **helm-controller** upgrades the HelmRelease. Drift
    detection reverts out-of-band changes to Helm-managed resources.
+
+## Workload standards
+
+Every workload follows the same rules:
+
+- **Pinned images.** No `:latest` anywhere — an unpinned tag is mutable
+  state (a pod reschedule can silently pull a different binary), and
+  Renovate can't update what isn't versioned.
+- **Resource requests and memory limits** on every container. CPU limits are
+  deliberately omitted: CPU is compressible, and quota throttling adds
+  latency without protecting anything — while memory is incompressible, so
+  leaks are contained by the limit instead of pressuring neighbors.
+- **Rollout strategy matches statefulness.** Apps with RWO volumes use
+  `Recreate` so a rollout never runs two instances against one volume;
+  stateless apps keep `RollingUpdate` for zero-downtime updates.
+- **Non-root, no privilege escalation.** All workloads satisfy the Pod
+  Security `restricted` profile.
+
+## Dependency updates
+
+A self-hosted Renovate runs hourly as a CronJob in the cluster, with two
+managers: `kubernetes` (container images in manifests) and `flux`
+(HelmRelease chart versions and the Flux toolkit itself). Updates arrive as
+PRs, pass the same CI gate as human changes, and deploy through Flux on
+merge — Renovate even updates its own image this way.
 
 ## Secrets
 
