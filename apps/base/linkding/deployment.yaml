@@ -4,6 +4,8 @@ metadata:
   name: linkding
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: linkding
