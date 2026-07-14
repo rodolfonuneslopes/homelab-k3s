@@ -13,6 +13,12 @@ spec:
           containers:
             - name: renovate
               image: renovate/renovate:43.262.3
+              resources:
+                requests:
+                  cpu: 250m
+                  memory: 512Mi
+                limits:
+                  memory: 1Gi
               args:
                 - rodolfonuneslopes/homelab-k3s
 
