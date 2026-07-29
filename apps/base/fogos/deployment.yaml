@@ -22,7 +22,7 @@ spec:
 
       containers:
         - name: fogos
-          image: ghcr.io/rodolfonuneslopes/fogos:0.1.6
+          image: ghcr.io/rodolfonuneslopes/fogos:0.1.7
 
           env:
             - name: FOGOS_TOKEN
