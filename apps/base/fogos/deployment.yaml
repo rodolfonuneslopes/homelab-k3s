@@ -23,6 +23,14 @@ spec:
       containers:
         - name: fogos
           image: ghcr.io/rodolfonuneslopes/fogos:0.1.6
+
+          env:
+            - name: FOGOS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: fogos-token
+                  key: FOGOS_TOKEN
+
           resources:
             requests:
               cpu: 10m

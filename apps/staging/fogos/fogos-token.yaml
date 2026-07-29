@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+    name: fogos-token
+type: Opaque
+stringData:
+    FOGOS_TOKEN: ENC[AES256_GCM,data:4v7sJ0RRb2kjsC4gPu+DuChzEBibHd2ZC+6fLCkh9GKpi2pogFD11r8JYEzBQu3S7QbWEzZUfGfGYg22adLSFw==,iv:FbLFLHkz4/opQCruKffJ5Fz7Frix866Muak+pEpmZOQ=,tag:rrlVmYjf1ksAhxLArMnrWA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBEMkFoRC83bThGM2lLUEJN
+            YmpJYXdZaGlEUzBDUE9STlBxSVBIRllIbEh3Ci9mc1AwNnkzM3lYRWR5b3l3cVZq
+            ZzFmMHV4S1pwa2xqZ0N2NVhJSDY0bTgKLS0tIDVFcGZlbVB5QmZhQS95cTY0a3Vn
+            czlsaG5mTHpoYlNncGJVYmg1dkQwSncKvcP9TtCuSfRII+Hlf1zYMNnqqoUvwITU
+            yqsa36OJEW0mLyZXeaylkrzLHWxP4znaifiyCFQ68DcclUgmLTxQvg==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age1527r4t30z72agrkt6kksgj4rwsch8wv7hcurtw2rm4pz56v6pvyqrukkmv
+    encrypted_regex: ^(data|stringData)$
+    lastmodified: "2026-07-29T09:36:35Z"
+    mac: ENC[AES256_GCM,data:mMeeUmL09DNsN2n1z4J/d+X4QczjZ1ZGlpflAJ4wiVUUpVnpA15EFTKZJGPT47rqDmMKsJvS0X7eWMYEJcu2LlPoZIdidZzX6ZbGhPDXaWt+Tp71rMZqeWpmZAi6Cs42P15QpAIfZBynvgmr6M5ArE+P6ZNO2n2fDAFAcFWf2M4=,iv:WWOkEgEZmpHsi5smjzIX0cSDlD8BirWDYkc3J7NQJ4E=,tag:VdwwXZbLac5LUArerCIDoQ==,type:str]
+    version: 3.13.1
