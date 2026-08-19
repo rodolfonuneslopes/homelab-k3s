@@ -1,0 +1,97 @@
+name: scan
+
+# Trivy scans every image this repository puts on the cluster and reports to
+# the Security tab. 
+
+# 1. Nightly (a CVE can appear with no commit), on merge, or on demand. No
+#    `pull_request` trigger on purpose: uploading SARIF creates a code-scanning
+#    check that would go red on PRs without being able to block them.
+on:
+  schedule:
+    # Offset from the hour, where every other cron on GitHub piles up.
+    - cron: "17 3 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 2. Read the repository, nothing else; the scan job widens this for itself.
+permissions:
+  contents: read
+
+# 3. One run per ref -- a second merge supersedes the first rather than
+#    stacking another full matrix behind it.
+concurrency:
+  group: scan-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 4. Derive the image list from the manifests, so no list is maintained here.
+  collect:
+    runs-on: ubuntu-latest
+    outputs:
+      # JSON array; a job output is the only way into another job's matrix.
+      images: ${{ steps.collect.outputs.images }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      # Install PyYAML
+      - name: Install PyYAML
+        run: pip install --quiet pyyaml
+
+      # JSON on stdout feeds the matrix; the inventory on stderr goes to the log.
+      - name: Collect image references
+        id: collect
+        run: |
+          echo "images=$(python3 .github/scripts/collect-images.py)" >> "$GITHUB_OUTPUT"
+
+  # 5. One leg per image: scan it, then publish the findings.
+  scan:
+    needs: collect
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write   # required by the SARIF upload
+    strategy:
+      fail-fast: false   # one bad image must not hide the others
+      max-parallel: 4    # each leg pulls the vulnerability database
+      matrix:
+        image: ${{ fromJSON(needs.collect.outputs.images) }}
+    steps:
+      # 5a. No checkout: Trivy scans a remote image reference.
+      - name: Scan ${{ matrix.image }}
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ matrix.image }}
+          format: sarif
+          output: trivy.sarif
+          severity: HIGH,CRITICAL
+          # Without this, `severity` applies to table output only.
+          limit-severities-for-sarif: true
+          # Renovate is the remediation path, so an unfixed finding is not
+          # actionable: there is no bump to merge.
+          ignore-unfixed: true
+          # Never fail the job -- a permanently red check is one nobody reads.
+          exit-code: "0"
+
+      # 5b. Each leg uploads against the same commit, so each needs its own
+      #     category or they overwrite each other. The tag is stripped so a
+      #     Renovate bump closes the alert instead of minting a new category.
+      - name: Derive a code-scanning category
+        id: category
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          repository="${IMAGE%:*}"
+          echo "name=$(printf '%s' "$repository" | tr -c '[:alnum:]._-' '-')" >> "$GITHUB_OUTPUT"
+
+      # 5c. Publish. Add a fork guard here if a `pull_request` trigger is ever
+      #     restored -- forks do not get `security-events: write`.
+      - name: Upload results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy.sarif
+          category: trivy:${{ steps.category.outputs.name }}

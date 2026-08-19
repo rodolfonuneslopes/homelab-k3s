@@ -1,13 +1,19 @@
 name: validate
 
+# The merge gate for `main`: render every Flux overlay the way
+# kustomize-controller will, then schema-check the result.
+
+# 1. Every PR, and every commit that lands on `main`.
 on:
   pull_request:
   push:
     branches: [main]
 
+# 2. Read the repository, nothing else.
 permissions:
   contents: read
 
+# 3. Pinned tool version, and where kubeconform looks up schemas.
 env:
   KUBECONFORM_VERSION: v0.8.0
   # Flux CRD schemas (Kustomization, HelmRelease, HelmRepository) come from
@@ -20,24 +26,24 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # 4. install kubeconform
       - name: Install kubeconform
         run: |
           curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
             | sudo tar xz -C /usr/local/bin kubeconform
 
+      # 5. Render every overlay Flux reconciles. The entry points own the
+      #    list, so it is not duplicated here. (`-N` stops yq emitting `---`.)
       - name: Render all Flux overlays
         run: |
           mkdir -p rendered
-          for d in apps/staging \
-                   infrastructure/controllers/staging \
-                   monitoring/controllers/staging \
-                   monitoring/configs/staging; do
+          for d in $(yq -N 'select(.kind == "Kustomization") | .spec.path' \
+                       clusters/staging/*.yaml | sed 's|^\./||'); do
             kubectl kustomize "$d" > "rendered/$(echo "$d" | tr / -).yaml"
           done
 
+      # 6. Schema-check the output
       - name: Validate rendered manifests
-        # Secrets are skipped: SOPS adds a top-level `sops` field and ENC[...]
-        # values, which legitimately fail the Secret schema.
         run: |
           kubeconform -summary \
             -schema-location default \
@@ -45,9 +51,8 @@ jobs:
             -skip Secret \
             rendered/*.yaml
 
+      # 7. The entry points belong to no overlay, so they need their own pass.
       - name: Validate cluster entry points
-        # gotk-components.yaml is Flux-generated ("DO NOT EDIT") and not
-        # validated here on purpose.
         run: |
           kubeconform -summary \
             -schema-location default \
