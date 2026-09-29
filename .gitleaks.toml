@@ -1,0 +1,37 @@
+# Default gitleaks rules, plus one for this repo's weak spot: a human-chosen
+# password in Helm values (the old Grafana `adminPassword`). The default
+# rules only flag high-entropy values, so they miss it.
+
+[extend]
+useDefault = true
+
+# Any literal under a key *ending* in password/pwd/token/api-key. Ending, so
+# references like `passwordKey: admin-password` or `tokenSecretRef:` pass.
+# Values starting with `$`, `{`, `|`, `>` or `&` are substitutions, anchors
+# or block scalars, not credentials. `*` (an alias) is not exempt: the old
+# Grafana password started with one.
+[[rules]]
+id = "yaml-credential-key"
+description = "Literal value under a password/token/api-key YAML key"
+regex = '''(?im)^\s*-?\s*["']?[\w.-]*(?:passw(?:or)?d|pwd|token|api[_-]?key)["']?\s*:\s*["']?([^\s"'#{}$|>&][^\s"'#]{3,})'''
+secretGroup = 1
+keywords = ["passw", "pwd", "token", "api"]
+
+# The same, as a container env var: the name and the literal sit on separate
+# lines (`- name: DB_PASSWORD` / `value: hunter2`). `valueFrom:` passes.
+[[rules]]
+id = "yaml-credential-env"
+description = "Literal value for a password/token/secret env var"
+regex = '''(?im)^\s*-\s*name:\s*["']?[\w.-]*(?:passw(?:or)?d|pwd|token|secret|api[_-]?key)[\w.-]*["']?\s*\n\s*value:\s*["']?([^\s"'#{}$|>&][^\s"'#]{3,})'''
+secretGroup = 1
+keywords = ["passw", "pwd", "token", "secret", "api"]
+
+# SOPS ciphertext sits under exactly those keys (`admin-password:`,
+# `FOGOS_TOKEN:`), so it must be let through.
+[[allowlists]]
+description = "SOPS ciphertext and metadata"
+regexTarget = "line"
+regexes = [
+  '''ENC\[AES256_GCM,data:''',
+  '''-----(BEGIN|END) AGE ENCRYPTED FILE-----''',
+]
