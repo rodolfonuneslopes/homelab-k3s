@@ -148,10 +148,13 @@ A forgotten `sops -e` is caught **before the commit exists**, by two
 [`.pre-commit-config.yaml`](.pre-commit-config.yaml)):
 
 - [`scripts/check-sops.py`](scripts/check-sops.py) — every `Secret` is fully
-  SOPS-encrypted; no `secretGenerator`. Re-runs on pre-push.
-- [gitleaks](https://github.com/gitleaks/gitleaks) — scans the staged diff for
-  credentials anywhere else (Helm values, ConfigMaps). SOPS ciphertext is
-  allowlisted in [`.gitleaks.toml`](.gitleaks.toml).
+  SOPS-encrypted; no `secretGenerator`.
+- [gitleaks](https://github.com/gitleaks/gitleaks) — credentials anywhere else
+  (Helm values, ConfigMaps, env vars). [`.gitleaks.toml`](.gitleaks.toml) adds
+  rules for weak, human-chosen passwords and allowlists SOPS ciphertext.
+
+Both run again on pre-push against every commit being pushed, so a commit made
+with `--no-verify` is still stopped before it leaves the machine.
 
 Hooks are local, so install them once per clone:
 
