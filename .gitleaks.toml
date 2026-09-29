@@ -1,0 +1,13 @@
+# Default gitleaks rules, minus SOPS output: ciphertext is high-entropy and
+# sits under keys like `RENOVATE_TOKEN:`, which the generic rules would flag.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SOPS ciphertext and metadata"
+regexTarget = "line"
+regexes = [
+  '''ENC\[AES256_GCM,data:''',
+  '''-----(BEGIN|END) AGE ENCRYPTED FILE-----''',
+]

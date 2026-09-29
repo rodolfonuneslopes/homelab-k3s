@@ -1,0 +1,24 @@
+# Local gate: nothing unencrypted reaches git history.
+# One-time setup per clone:
+#   pipx install pre-commit
+#   pre-commit install --hook-type pre-commit --hook-type pre-push
+
+repos:
+  # 1. Content scan of the staged diff -- catches plaintext anywhere
+  #    (HelmRelease values, ConfigMaps, README), not only in Secrets.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # 2. Structural check: every Secret is fully SOPS-encrypted.
+  - repo: local
+    hooks:
+      - id: sops-encrypted
+        name: Secrets are SOPS-encrypted
+        entry: python3 scripts/check-sops.py
+        language: python
+        additional_dependencies: [pyyaml]
+        files: \.ya?ml$
+        # pre-push re-checks, in case a commit was made with --no-verify.
+        stages: [pre-commit, pre-push]

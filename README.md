@@ -86,6 +86,7 @@ monitoring/
 └── configs/               # Configuration consumed by the release (secrets)
 
 .github/workflows/         # CI: render all overlays, validate schemas
+scripts/check-sops.py      # pre-commit: refuse unencrypted Secrets
 ```
 
 The **base/overlay** split keeps app manifests environment-agnostic; adding a
@@ -141,6 +142,23 @@ diffs and PR review while *values* are ciphertext.
 Flux decrypts at apply time using the age private key stored in the
 `sops-age` secret in `flux-system` — created once at bootstrap and backed up
 offline. It is the trust root and the only secret that never touches git.
+
+A forgotten `sops -e` is caught **before the commit exists**, by two
+[pre-commit](https://pre-commit.com) hooks (see
+[`.pre-commit-config.yaml`](.pre-commit-config.yaml)):
+
+- [`scripts/check-sops.py`](scripts/check-sops.py) — every `Secret` is fully
+  SOPS-encrypted; no `secretGenerator`. Re-runs on pre-push.
+- [gitleaks](https://github.com/gitleaks/gitleaks) — scans the staged diff for
+  credentials anywhere else (Helm values, ConfigMaps). SOPS ciphertext is
+  allowlisted in [`.gitleaks.toml`](.gitleaks.toml).
+
+Hooks are local, so install them once per clone:
+
+```sh
+pipx install pre-commit
+pre-commit install --hook-type pre-commit --hook-type pre-push
+```
 
 ## Applications
 
