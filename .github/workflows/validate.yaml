@@ -1,7 +1,8 @@
 name: validate
 
 # The merge gate for `main`: render every Flux overlay the way
-# kustomize-controller will, then schema-check the result.
+# kustomize-controller will, then schema-check the result. Alongside, re-run
+# the local secret hooks as a backstop.
 
 # 1. Every PR, and every commit that lands on `main`.
 on:
@@ -60,3 +61,44 @@ jobs:
             clusters/staging/apps.yaml \
             clusters/staging/infrastructure.yaml \
             clusters/staging/monitoring.yaml
+
+  # 8. Backstop for the local hooks (README → Secrets). They are what keeps
+  #    plaintext out of git; this job cannot -- by the time it runs, the
+  #    commits are on GitHub. It reports what slipped past them: a clone
+  #    without the hooks installed, `--no-verify`, a web-UI edit.
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0   # the checks read every commit in the range
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.x"
+
+      - name: Install pre-commit
+        run: pip install --quiet pre-commit
+
+      # 8a. gitleaks is built from source on first use; keep it between runs.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # 8b. The hooks' own pre-push stage, so the rules live in one place.
+      #     Only the new commits: history before them holds an already-
+      #     rotated Grafana password that would fail every run.
+      - name: Check the new commits for secrets
+        id: check
+        env:
+          FROM: ${{ github.event.pull_request.base.sha || github.event.before }}
+          TO: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: pre-commit run --hook-stage pre-push --from-ref "$FROM" --to-ref "$TO"
+
+      # 8c. Blocking the merge is not enough once a secret is public.
+      - name: Explain a failure
+        if: failure() && steps.check.outcome == 'failure'
+        run: |
+          echo "::error::A secret reached GitHub. Rotate it first -- it is public" \
+               "from the moment it was pushed. Then fix the commit and force-push."
