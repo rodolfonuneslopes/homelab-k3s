@@ -8,3 +8,4 @@ resources:
   - joplin-db-secret.yaml
 patches:
   - path: config-patch.yaml
+  - path: probe-patch.yaml

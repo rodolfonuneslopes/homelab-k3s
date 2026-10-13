@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: joplin
+spec:
+  template:
+    spec:
+      containers:
+        - name: joplin
+          # Joplin answers 404 to any request whose Host is not the one in
+          # APP_BASE_URL. The kubelet probes by pod IP, so each probe has to
+          # send the public hostname.
+          startupProbe:
+            httpGet:
+              httpHeaders:
+                - name: Host
+                  value: joplin.nuneslopes.org
+          readinessProbe:
+            httpGet:
+              httpHeaders:
+                - name: Host
+                  value: joplin.nuneslopes.org
+          livenessProbe:
+            httpGet:
+              httpHeaders:
+                - name: Host
+                  value: joplin.nuneslopes.org
