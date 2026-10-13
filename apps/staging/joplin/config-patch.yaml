@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: joplin-configmap
+data:
+  # The public origin: Joplin builds its links and checks request origins
+  # against it, so it has to match the tunnel hostname exactly.
+  APP_BASE_URL: https://joplin.nuneslopes.org

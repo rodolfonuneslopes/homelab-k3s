@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: joplin-configmap
+data:
+  APP_PORT: "22300"
+  DB_CLIENT: pg
+  POSTGRES_HOST: joplin-postgres
+  POSTGRES_PORT: "5432"

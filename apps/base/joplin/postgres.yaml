@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: joplin-postgres
+spec:
+  # Headless: the StatefulSet's governing service, one pod behind it.
+  clusterIP: None
+  ports:
+    - port: 5432
+  selector:
+    app: joplin-postgres
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: joplin-postgres
+spec:
+  serviceName: joplin-postgres
+  replicas: 1
+  selector:
+    matchLabels:
+      app: joplin-postgres
+  template:
+    metadata:
+      labels:
+        app: joplin-postgres
+    spec:
+      securityContext:
+        # the user for postgres on alpine is postgres with the id 70
+        fsGroup: 70
+        runAsUser: 70
+        runAsGroup: 70
+      containers:
+        - name: postgres
+          image: postgres:17.11-alpine
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+          ports:
+            - containerPort: 5432
+
+          envFrom:
+            - secretRef:
+                name: joplin-db
+          env:
+            # A subdirectory, so initdb never trips over whatever the
+            # volume root already holds.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+
+          securityContext:
+            allowPrivilegeEscalation: false
+
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  # A claim made from a template is not an object Flux applied, so
+  # `prune: true` can never delete the notes along with a manifest.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi

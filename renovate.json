@@ -5,5 +5,13 @@
   },
   "flux": {
     "managerFilePatterns": ["/\\.yaml$/"]
-  }
+  },
+  "packageRules": [
+    {
+      "description": "A PostgreSQL major upgrade needs a dump and restore, not an image swap.",
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
 }
