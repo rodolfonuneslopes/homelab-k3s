@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: joplin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: joplin
+  template:
+    metadata:
+      labels:
+        app: joplin
+    spec:
+      securityContext:
+        # the user for joplin server is joplin with the id 1001
+        fsGroup: 1001
+        runAsUser: 1001
+        runAsGroup: 1001
+      containers:
+        - name: joplin
+          image: joplin/server:3.7.2
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 1Gi
+          ports:
+            - containerPort: 22300
+
+          envFrom:
+            - configMapRef:
+                name: joplin-configmap
+            - secretRef:
+                name: joplin-db
+
+          securityContext:
+            allowPrivilegeEscalation: false
+
+          # Booting runs the database migrations before the port opens, so
+          # the startup probe allows up to 5 minutes for it.
+          startupProbe:
+            httpGet:
+              path: /api/ping
+              port: 22300
+            periodSeconds: 10
+            failureThreshold: 30
+
+          readinessProbe:
+            httpGet:
+              path: /api/ping
+              port: 22300
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /api/ping
+              port: 22300
+            periodSeconds: 30

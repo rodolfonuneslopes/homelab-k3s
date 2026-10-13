@@ -1,11 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: linkding
+  name: joplin
 spec:
   ports:
-    - port: 9090
+    - port: 22300
   selector:
-    app: linkding
+    app: joplin
   type: ClusterIP
-

@@ -45,7 +45,7 @@ spec:
       volumes:
       - name: creds
         secret:
-          secretName: linkding-tunnel
+          secretName: joplin-tunnel
       - name: config
         configMap:
           name: cloudflared
@@ -59,7 +59,7 @@ metadata:
   name: cloudflared
 data:
   config.yaml: |
-    tunnel: linkding
+    tunnel: joplin
     credentials-file: /etc/cloudflared/creds/credentials.json
 
     # Metrics under /metrics and readiness under /ready.
@@ -67,7 +67,7 @@ data:
     no-autoupdate: true
 
     ingress:
-    - hostname: linkding.nuneslopes.org
-      service: http://linkding:9090
+    - hostname: joplin.nuneslopes.org
+      service: http://joplin:22300
     # Catch-all: anything else gets a 404.
     - service: http_status:404

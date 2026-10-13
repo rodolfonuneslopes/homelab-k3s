@@ -173,8 +173,7 @@ one that slipped past the hooks, so it can be rotated.
 | App | What it is | Exposure |
 |---|---|---|
 | [fogos](apps/base/fogos/) | My own service (self-contained static binary on a distroless image) serving Portuguese wildfire incident data | Cloudflare Tunnel |
-| [linkding](apps/base/linkding/) | Self-hosted bookmark manager | Cloudflare Tunnel |
-| [audiobookshelf](apps/base/audiobookshelf/) | Audiobook & podcast server | Cloudflare Tunnel |
+| [joplin](apps/base/joplin/) | Joplin Server — note sync for the Joplin apps, backed by its own PostgreSQL | Cloudflare Tunnel |
 | Grafana | Dashboards for the monitoring stack | LAN-only, via Traefik ingress + TLS |
 
 Each public app gets its **own** tunnel with its own credentials: a leaked

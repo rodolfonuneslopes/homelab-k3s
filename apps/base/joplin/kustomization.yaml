@@ -4,5 +4,5 @@ resources:
   - configmap.yaml
   - deployment.yaml
   - namespace.yaml
+  - postgres.yaml
   - service.yaml
-  - storage.yaml
