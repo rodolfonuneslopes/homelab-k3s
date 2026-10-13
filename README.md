@@ -163,6 +163,11 @@ pipx install pre-commit
 pre-commit install --hook-type pre-commit --hook-type pre-push
 ```
 
+CI re-runs the same pre-push checks over the commits each PR or push adds
+(the `secrets` job in [`validate.yaml`](.github/workflows/validate.yaml)). It
+cannot keep a secret out of GitHub — it runs after the push — but it reports
+one that slipped past the hooks, so it can be rotated.
+
 ## Applications
 
 | App | What it is | Exposure |
