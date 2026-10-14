@@ -10,7 +10,7 @@
 
 [![k3s](https://img.shields.io/badge/k3s-FFC61C?logo=k3s&logoColor=black)](https://k3s.io)
 [![Flux CD](https://img.shields.io/badge/GitOps-Flux%20CD-5468FF?logo=flux&logoColor=white)](https://fluxcd.io)
-[![Cloudflare Tunnel](https://img.shields.io/badge/ingress-Cloudflare%20Tunnel-F38020?logo=cloudflare&logoColor=white)](#)
+[![Cloudflare Tunnel](https://img.shields.io/badge/ingress-Cloudflare%20Tunnel-F38020?logo=cloudflare&logoColor=white)](https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/)
 
 GitOps-managed Kubernetes homelab: a [k3s](https://k3s.io) cluster fully
 reconciled by [Flux CD](https://fluxcd.io) from this repository. Nothing is
