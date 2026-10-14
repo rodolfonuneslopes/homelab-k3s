@@ -6,6 +6,12 @@ resources:
   - cloudflare.yaml
   - cloudflare-secret.yaml
   - joplin-db-secret.yaml
+# Generated, so the name carries a hash of the content: a config change
+# renames it and rolls the cloudflared pods, which only read it at startup.
+configMapGenerator:
+  - name: cloudflared
+    files:
+      - config.yaml=cloudflared-config.yaml
 patches:
   - path: config-patch.yaml
   - path: probe-patch.yaml

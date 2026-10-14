@@ -1,0 +1,17 @@
+tunnel: joplin
+credentials-file: /etc/cloudflared/creds/credentials.json
+
+# Metrics under /metrics and readiness under /ready.
+metrics: 0.0.0.0:2000
+no-autoupdate: true
+
+ingress:
+# The web app shares the hostname, so its sync requests are same-origin.
+# More specific than the next rule, so it must come first.
+- hostname: joplin.nuneslopes.org
+  path: ^/web(/|$)
+  service: http://joplin-web:8080
+- hostname: joplin.nuneslopes.org
+  service: http://joplin:22300
+# Catch-all: anything else gets a 404.
+- service: http_status:404
