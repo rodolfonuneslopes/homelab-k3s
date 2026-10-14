@@ -1,6 +1,16 @@
 # homelab-k3s
 
-[![validate](https://github.com/rodolfonuneslopes/homelab-k3s/actions/workflows/validate.yaml/badge.svg)](https://github.com/rodolfonuneslopes/homelab-k3s/actions/workflows/validate.yaml)
+[![validate](https://github.com/rodolfonuneslopes/homelab-k3s/actions/workflows/validate.yaml/badge.svg?branch=main)](https://github.com/rodolfonuneslopes/homelab-k3s/actions/workflows/validate.yaml)
+[![scan](https://github.com/rodolfonuneslopes/homelab-k3s/actions/workflows/scan.yaml/badge.svg?branch=main)](https://github.com/rodolfonuneslopes/homelab-k3s/actions/workflows/scan.yaml)
+[![Trivy findings](https://img.shields.io/badge/trivy-security%20tab-blue)](https://github.com/rodolfonuneslopes/homelab-k3s/security/code-scanning)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit)](.pre-commit-config.yaml)
+[![gitleaks](https://img.shields.io/badge/secrets-gitleaks-blue)](.gitleaks.toml)
+[![SOPS](https://img.shields.io/badge/secrets-SOPS%20%2B%20age-blue)](.sops.yaml)
+[![Renovate](https://img.shields.io/badge/renovate-enabled-brightgreen?logo=renovatebot)](renovate.json)
+
+[![k3s](https://img.shields.io/badge/k3s-FFC61C?logo=k3s&logoColor=black)](https://k3s.io)
+[![Flux CD](https://img.shields.io/badge/GitOps-Flux%20CD-5468FF?logo=flux&logoColor=white)](https://fluxcd.io)
+[![Cloudflare Tunnel](https://img.shields.io/badge/ingress-Cloudflare%20Tunnel-F38020?logo=cloudflare&logoColor=white)](#)
 
 GitOps-managed Kubernetes homelab: a [k3s](https://k3s.io) cluster fully
 reconciled by [Flux CD](https://fluxcd.io) from this repository. Nothing is
