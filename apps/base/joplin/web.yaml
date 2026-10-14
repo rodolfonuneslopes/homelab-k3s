@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: joplin-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: joplin-web
+  template:
+    metadata:
+      labels:
+        app: joplin-web
+    spec:
+      securityContext:
+        # nginx-unprivileged's built-in user
+        fsGroup: 101
+        runAsUser: 101
+        runAsGroup: 101
+      containers:
+        - name: joplin-web
+          image: ghcr.io/rodolfonuneslopes/joplin-web:3.7.21
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+          ports:
+            - containerPort: 8080
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            # nginx only writes its pid and temp files, all under /tmp.
+            readOnlyRootFilesystem: true
+
+          readinessProbe:
+            httpGet:
+              path: /web/
+              port: 8080
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /web/
+              port: 8080
+            periodSeconds: 30
+
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: joplin-web
+spec:
+  ports:
+    - port: 8080
+  selector:
+    app: joplin-web
+  type: ClusterIP
